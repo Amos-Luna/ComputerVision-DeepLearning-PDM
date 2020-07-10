@@ -1,0 +1,55 @@
+################# Celda 1 ########################
+import cv2,os
+
+Ruta_data='dataset'
+categorias_dir=os.listdir(Ruta_data)
+etiquet=[i for i in range(len(categorias_dir))]
+
+etiquet_dict=dict(zip(categorias_dir,etiquet))
+
+print(etiquet_dict)
+print(categorias_dir)
+print(etiquet)
+
+################# Celda 2 ########################
+
+tamaño_imagen=100
+data_tot=[]
+objetiv=[]
+
+
+for categoria in categorias_dir:
+    ruteo_folder=os.path.join(Ruta_data,categoria)
+    nombre_imagenes=os.listdir(ruteo_folder)
+        
+    for nombre_imagen in nombre_imagenes:
+        imagen_ruteada=os.path.join(ruteo_folder,nombre_imagen)
+        imagen=cv2.imread(imagen_ruteada)
+
+        try:
+            gray=cv2.cvtColor(imagen,cv2.COLOR_BGR2GRAY) #Convertimos la imagen a la escala gray        
+            redimension=cv2.resize(gray,(tamaño_imagen,tamaño_imagen))
+            #Cambiamos el tamaño de la escala de grises a 100x100, ya que necesitamos un tamaño 
+            #común fijo para todas las imágenes en el conjunto de datos
+            data_tot.append(redimension) #agregamos 
+            objetiv.append(etiquet_dict[categoria])
+            #appending the image and the label(categorized) into the list (dataset)
+
+        except Exception as e:
+            print('Exception:',e) #Si se produce alguna excepción, la excepción se imprimirá aquí y pasar a la siguiente imagen
+
+################# Celda 3 ########################
+
+import numpy as np
+
+data_tot=np.array(data_tot)/255.0
+data_tot=np.reshape(data_tot,(data_tot.shape[0],tamaño_imagen,tamaño_imagen,1))
+objetiv=np.array(objetiv)
+
+from keras.utils import np_utils
+
+nuevo_objetiv=np_utils.to_categorical(objetiv)
+
+np.save('data',data_tot)
+np.save('target',nuevo_objetiv)
+
