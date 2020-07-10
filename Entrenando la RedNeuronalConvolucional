@@ -1,0 +1,64 @@
+####################### Celda 1 #########################
+import numpy as np
+
+extrac_data=np.load('data.npy')
+objetiv=np.load('target.npy')
+
+#Cargamos los arreglos con numpy guardados en el código anterior
+
+####################### Celda 2 #########################
+from keras.models import Sequential
+from keras.layers import Dense,Activation,Flatten,Dropout
+from keras.layers import Conv2D,MaxPooling2D
+from keras.callbacks import ModelCheckpoint
+
+modelo=Sequential()
+
+modelo.add(Conv2D(200,(3,3),input_shape=extrac_data.shape[1:]))
+modelo.add(Activation('relu'))
+modelo.add(MaxPooling2D(pool_size=(2,2)))
+#La primera capa CNN será seguida de las capas Relu y MaxPooling
+
+modelo.add(Conv2D(100,(3,3)))
+modelo.add(Activation('relu'))
+modelo.add(MaxPooling2D(pool_size=(2,2)))
+#La segunda capa de convolución será seguida de las capas Relu y MaxPooling
+
+modelo.add(Flatten())
+modelo.add(Dropout(0.5))
+# Procedemos a una capa plana para apilar las convoluciones de salida de la segunda capa de convolución
+modelo.add(Dense(50,activation='relu'))
+#Densidad de la capa será de 64 neuronas
+modelo.add(Dense(2,activation='softmax'))
+#La capa final contendrá dos salidas para dos categorías, mostradas más adelante.
+
+modelo.compile(loss='categorical_crossentropy',optimizer='adam',metrics=['accuracy'])
+
+############### Celda 3 #########################
+from sklearn.model_selection import train_test_split
+train_data,test_data,train_target,test_target=train_test_split(extrac_data,objetiv,test_size=0.1)
+
+checkpoint = ModelCheckpoint('model-{epoch:03d}.model',monitor='val_loss',verbose=0,save_best_only=True,mode='auto')
+history=modelo.fit(train_data,train_target,epochs=20,callbacks=[checkpoint],validation_split=0.2)
+
+############### Celda 4 (Para visualizar el comportamienteo de la funcion de perdida) #########################
+from matplotlib import pyplot as plt
+
+plt.plot(history.history['loss'],'r',label='training loss')
+plt.plot(history.history['val_loss'],label='validation loss')
+plt.xlabel('Numero epochs')
+plt.ylabel('loss')
+plt.legend()
+plt.show()
+
+############### Celda 5 (Para visualizar el entrenamiento de precisión) #########################
+plt.plot(history.history['accuracy'],'r',label='training accuracy')
+plt.plot(history.history['val_accuracy'],label='validation accuracy')
+plt.xlabel('# epochs')
+plt.ylabel('loss')
+plt.legend()
+plt.show()
+
+############### Celda 6 (Para visualizar el valor final exacto al que se logró llegar en pérdida y precisión) #########################
+print(modelo.evaluate(test_data,test_target))
+
