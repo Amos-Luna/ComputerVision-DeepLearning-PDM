@@ -1,0 +1,50 @@
+############################# Celda 1 ################################
+
+from keras.models import load_model
+import cv2
+import numpy as np
+
+modelo = load_model('model-017.model')
+
+detecion_facial_frontal=cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+factor_escalamiento = 1 
+
+cap=cv2.VideoCapture(0) #Uso de la WebCam
+
+labels_dict={0:'Amos: Using Mask',1:'Amos: Not using Mask'}
+color_dict={0:(0,255,0),1:(0,0,255)} #Colores Verde y Rojo
+
+############################# Celda 2 ################################
+while(True):
+
+    ret,imagen=cap.read()
+    imagen = cv2.resize(imagen, None, fx=factor_escalamiento, fy=factor_escalamiento, interpolation=cv2.INTER_AREA) 
+    gray=cv2.cvtColor(imagen,cv2.COLOR_BGR2GRAY) #Convertimos la imagen a la escala gray
+    rostros_escal=detecion_facial_frontal.detectMultiScale(gray)
+
+    for x,y,w,h in rostro_escal:
+    
+        rostro_imag=gray[y:y+w,x:x+w]
+        redimensionado=cv2.resize(rostro_imag,(100,100))
+        normalizado=redimensionado/255.0
+        reforma=np.reshape(normalizado,(1,100,100,1))
+        resultado=modelo.predict(reforma)
+
+        etiquet=np.argmax(resultado,axis=1)[0]
+      
+        cv2.rectangle(imagen,(x,y),(x+w,y+h),color_dict[etiquet],2)
+        cv2.rectangle(imagen,(x,y-40),(x+w,y),color_dict[etiquet],-1)
+        cv2.putText(imagen, labels_dict[etiquet], (x, y-10),cv2.FONT_HERSHEY_SIMPLEX,0.8,(255,255,255),2)
+                
+    cv2.imshow('Detector de Uso de Mascarilla',imagen)
+    
+    #Usar boton "Esc" para salir de la WebCam y romper el procesamiento.
+    key=cv2.waitKey(1)
+    if(key==27):
+        break
+        
+cv2.destroyAllWindows()
+cap.release()
+
+
+
